@@ -24,7 +24,7 @@ module OmniAuth
         :plain => nil,
       }
 
-      attr_accessor :bind_dn, :password
+      attr_accessor :bind_dn, :password, :use_user_credential
       attr_reader :connection, :uid, :base, :auth, :filter
       def self.validate(configuration={})
         message = []
