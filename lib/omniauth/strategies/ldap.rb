@@ -38,6 +38,13 @@ module OmniAuth
         @adaptor = OmniAuth::LDAP::Adaptor.new @options
 
         return fail!(:missing_credentials) if missing_credentials?
+
+        if @adaptor.use_user_credential
+          @adaptor.bind_dn = "uid=#{request['username']},#{@adaptor.base}"
+          @adaptor.password = request['password']
+          @adaptor.reset_connection
+        end
+
         begin
           @ldap_user_info = @adaptor.bind_as(:base => @adaptor.base, :filter => filter(@adaptor), :size => 1, :password => request['password'])
           return fail!(:invalid_credentials) if !@ldap_user_info
