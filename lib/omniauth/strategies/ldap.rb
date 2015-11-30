@@ -42,7 +42,6 @@ module OmniAuth
         if @adaptor.use_user_credential
           @adaptor.bind_dn = "#{@adaptor.uid}=#{request['username']},#{@adaptor.base}"
           @adaptor.password = request['password']
-          @adaptor.reset_connection
         end
 
         begin
