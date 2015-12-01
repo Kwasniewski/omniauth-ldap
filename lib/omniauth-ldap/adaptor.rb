@@ -58,12 +58,15 @@ module OmniAuth
         }
         @bind_method = @try_sasl ? :sasl : (@allow_anonymous||!@bind_dn||!@password ? :anonymous : :simple)
 
-
-        @auth = sasl_auths({:username => @bind_dn, :password => @password}).first if @bind_method == :sasl
-        @auth ||= { :method => @bind_method,
+        if @bind_method == :sasl
+          @auth = sasl_auths({:username => @bind_dn, :password => @password}).first if @bind_method == :sasl
+        else
+          @auth = { :method => @bind_method,
                     :username => @bind_dn,
                     :password => @password
                   }
+        end
+
         config[:auth] = @auth
         @connection = Net::LDAP.new(config)
       end
