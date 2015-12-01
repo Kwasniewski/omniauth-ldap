@@ -13,7 +13,7 @@ module OmniAuth
       class AuthenticationError < StandardError; end
       class ConnectionError < StandardError; end
 
-      VALID_ADAPTER_CONFIGURATION_KEYS = [:host, :port, :method, :bind_dn, :password, :try_sasl, :sasl_mechanisms, :uid, :base, :allow_anonymous, :filter, :use_user_credential]
+      VALID_ADAPTER_CONFIGURATION_KEYS = [:host, :port, :method, :bind_dn, :password, :try_sasl, :sasl_mechanisms, :uid, :base, :allow_anonymous, :filter, :use_user_credential, :skip_search]
 
       # A list of needed keys. Possible alternatives are specified using sub-lists.
       MUST_HAVE_KEYS = [:host, :port, :method, [:uid, :filter], :base]
@@ -24,7 +24,7 @@ module OmniAuth
         :plain => nil,
       }
 
-      attr_accessor :bind_dn, :password, :use_user_credential
+      attr_accessor :bind_dn, :password, :use_user_credential, :skip_search
       attr_reader :connection, :uid, :base, :auth, :filter
       def self.validate(configuration={})
         message = []
@@ -77,16 +77,24 @@ module OmniAuth
       def bind_as(args = {})
         result = false
         @connection.open do |me|
-          rs = me.search args
-          if rs and rs.first and dn = rs.first.dn
-            password = args[:password]
-            method = args[:method] || @method
-            password = password.call if password.respond_to?(:call)
-            if method == 'sasl'
-            result = rs.first if me.bind(sasl_auths({:username => dn, :password => password}).first)
-            else
-            result = rs.first if me.bind(:method => :simple, :username => dn,
-                                :password => password)
+          password = args[:password]
+          if @skip_search
+            username = "#{@uid}=#{args[:username]},#{@base}"
+            # Create fake ldap result (hack)
+            rs = OpenStruct.new(:dn => [username], :uid => [args[:username]], :cn => [args[:username]], :email => ["#{args[:username]}@tokbox.com"])
+            result = rs if me.bind(:method => :simple, :username => username, :password => password)
+            p result
+          else
+            rs = me.search args
+            if rs and rs.first and dn = rs.first.dn
+              method = args[:method] || @method
+              password = password.call if password.respond_to?(:call)
+              if method == 'sasl'
+              result = rs.first if me.bind(sasl_auths({:username => dn, :password => password}).first)
+              else
+              result = rs.first if me.bind(:method => :simple, :username => dn,
+                                  :password => password)
+              end
             end
           end
         end

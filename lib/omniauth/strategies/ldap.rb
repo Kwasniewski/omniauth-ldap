@@ -46,7 +46,7 @@ module OmniAuth
         end
 
         begin
-          @ldap_user_info = @adaptor.bind_as(:base => @adaptor.base, :filter => filter(@adaptor), :size => 1, :password => request['password'])
+          @ldap_user_info = @adaptor.bind_as(:base => @adaptor.base, :filter => filter(@adaptor), :size => 1, :password => request['password'], :username => request['username'])
           return fail!(:invalid_credentials) if !@ldap_user_info
 
           @user_info = self.class.map_user(@@config, @ldap_user_info)
